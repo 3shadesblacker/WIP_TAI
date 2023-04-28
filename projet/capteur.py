@@ -40,7 +40,7 @@ def add_data(df: pd.DataFrame):
     # retourner le dataframe
     """
     percentage = 0
-    for i in range(10100):
+    for i in range(10000):
         timestamp = datetime.datetime.now() + datetime.timedelta(np.random.randint(low=1, high=120))
         height = np.random.normal(loc=20, scale=5)
         width = np.random.normal(loc=50, scale=10)
@@ -69,14 +69,12 @@ def write_data_minio(df: pd.DataFrame):
     """
     client = Minio(
         "localhost:9000",
-        secure=False,
         access_key="minio",
-        secret_key="minio123"
+        secret_key="minio123",
+        secure=False
     )
-    if client.bucket_exists("receiver"):
+    if not client.bucket_exists("receiver"):
         client.make_bucket("receiver")
-    else:
-        print("Bucket 'receiver' already exists")
 
     timestamp = datetime.datetime.now().strftime('%d-%m-%y')
     df.to_csv(f"receiver_{timestamp}.csv", encoding='utf-8', index=False)
@@ -91,3 +89,4 @@ if __name__ == "__main__":
     columns = ['timestamp', 'height', 'width', 'door_number', 'entrance_exit', 'parking_spot']
     df = generate_dataframe(columns)
     write_data_minio(df)
+    print("Success")

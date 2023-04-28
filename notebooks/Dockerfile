@@ -22,3 +22,5 @@ RUN curl -O https://repo1.maven.org/maven2/software/amazon/awssdk/s3/2.18.41/s3-
     && mv delta-core_2.12-2.2.0.jar /usr/local/spark/jars \
     && mv delta-storage-2.2.0.jar /usr/local/spark/jars \
     && mv hadoop-aws-3.3.2.jar /usr/local/spark/jars
+
+RUN pip install kafka-python
