@@ -1,11 +1,7 @@
-import pandas as pd
+import datetime
 import numpy as np
-import datetime
-from kafka import *
+import pandas as pd
 from minio import Minio
-from minio.error import S3Error
-import datetime
-import json
 
 """
 Mini-Projet : Traitement de l'Intelligence Artificielle
@@ -24,13 +20,15 @@ Squelette pour simuler un capteur qui est temporairement stocké sous la forme d
     Un Quatrième programme qui va prédire une valeur en fonction de votre projet. (Fichier predict.py)
 """
 
-def generate_dataFrame(col):
+
+def generate_dataframe(col):
     """
     Cette méthode permet de générer un DataFrame Pandas pour alimenter vos data
     """
     df = pd.DataFrame(columns=col)
     add_data(df)
     return df
+
 
 def add_data(df: pd.DataFrame):
     """
@@ -51,14 +49,15 @@ def add_data(df: pd.DataFrame):
         parking_spot = np.random.randint(low=0, high=500)
         df.loc[i] = [timestamp, height, width, door_number, entrance_exit, parking_spot]
         if i and i % 1000 == 0:
-            percent = 100 - (10000//i)
+            percent = 100 - (10000 // i)
             if percent != percentage:
-                print("Data generation at {}%".format(percent))
+                print(f"Data generation at {percent}%")
                 percentage = percent
             if i == 10000:
                 print("Data generation at 100%")
                 break
     return df
+
 
 def write_data_minio(df: pd.DataFrame):
     """
@@ -77,11 +76,12 @@ def write_data_minio(df: pd.DataFrame):
     if client.bucket_exists("receiver"):
         client.make_bucket("receiver")
     else:
-        print("Bucket 'receiver' existe déjà")
+        print("Bucket 'receiver' already exists")
 
     timestamp = datetime.datetime.now().strftime('%d-%m-%y')
-    data = df.to_csv("receiver_" + str(timestamp) + ".csv", encoding='utf-8', index=False)
-    client.fput_object("receiver", "receiver_" + str(timestamp) + ".csv",  "receiver_" + str(timestamp) + ".csv")
+    df.to_csv(f"receiver_{timestamp}.csv", encoding='utf-8', index=False)
+    client.fput_object("receiver", f"receiver_{timestamp}.csv", f"receiver_{timestamp}.csv")
+
 
 if __name__ == "__main__":
     """""
@@ -89,5 +89,5 @@ if __name__ == "__main__":
     decommentez le code du dessous
     """""
     columns = ['timestamp', 'height', 'width', 'door_number', 'entrance_exit', 'parking_spot']
-    df = generate_dataFrame(columns)
+    df = generate_dataframe(columns)
     write_data_minio(df)

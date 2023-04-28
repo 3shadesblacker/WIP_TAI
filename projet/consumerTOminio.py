@@ -11,8 +11,8 @@ def main():
                     secure=False)
 
     # Vérifier si le seau existe, sinon le créer
-    if not minioClient.bucket_exists("mybucket"):
-        minioClient.make_bucket("mybucket")
+    if not minioClient.bucket_exists("buffer"):
+        minioClient.make_bucket("buffer")
 
     # Initialiser le consommateur Kafka
     consumer = KafkaConsumer('capteur',
@@ -33,7 +33,7 @@ def main():
 
         # Enregistrement des données dans le bucket MinIO
         minioClient.put_object(
-            "mybucket",
+            "buffer",
             object_name,
             data_json,
             len(data_json),
