@@ -43,8 +43,8 @@ def test_model(spark, model):
     Méthode qui permet de tester la performance du model en fonction du jeux de test fournis
     (Optionnel)
     """
-    test_data = spark.read.format("libsvm").load("path/to/test/file")
-    predictions = model.transform(test_data)
+    validation_data = spark.read.parquet("saved_test_data/validation_data.parquet")
+    predictions = model.transform(validation_data)
     predictions.show()
 
 
@@ -89,17 +89,18 @@ def main():
 
     found = minio_client.bucket_exists(bucket)
     if not found:
-        print("Bucket "+ bucket +" n'existe pas; arrêt de l'entrainement")
-        spark.stop()
+        print("Bucket "+ bucket +" n'existe pas; creation du bucket")
+        minio_client.make_bucket("receiver")
     else:
         print("Bucket " + bucket + " existant")
 
     """
     Récupérer le fichier CSV qui se trouve dans votre bucket Warehouse
     """
+    timestamp = datetime.now().strftime('%d-%m-%y')
     obj: urllib3.response.HTTPResponse = minio_client.get_object(
-        '???', # Bucket
-        '', # Fichier CSV
+        'received', # Bucket
+        f"received_{timestamp}.json", # Fichier json
     )
 
     """
@@ -126,27 +127,26 @@ def main():
     Diviser le DataFrame en deux sous DataFrame, à savoir train_data et validation_data en
     utilisation la méthode set_train_and_validation_ds
     """
-    ?, ? = ???(df_spark, seed)
+    train_data, validation_data = set_train_and_validation_ds(df_spark, seed)
 
     """
     features_cols : La liste des colonnes du dataset dont vous allez utiliser pour entrainer le modèle
     target_col : Le nom de la colonne que vous allez prédire
     """
-    features_cols = ["order_purchase_timestamp_int", "order_approved_at_int",
-                     "order_delivered_carrier_date_int", "order_estimated_delivery_date_int"]
-    target_col = "order_delivered_customer_date_int"
+    features_cols = ['timestamp', 'height', 'width', 'entrance_exit', 'parking_spot']
+    target_col = 'door_number'
 
     '''
     Assembler = Spécifique à SparkML, permet de mettre les colonnes d'entrainement sous la forme d'une seule colonne
     Prends en inputCols les noms des colonnes à transformer
     Prends en outputCol le nom "features"
     '''
-    assembler = VectorAssembler(inputCols=???, outputCol=???)
+    assembler = VectorAssembler(inputCols=features_cols, outputCol='features')
 
     """
     Appliquer la transformation d'Assembler pour le DataFrame train_data
     """
-    data_with_features = assembler.transform(???)
+    data_with_features = assembler.transform(train_data)
 
     """
     Création d'un modèle de Régression Linéaire avec: 
@@ -154,13 +154,13 @@ def main():
         - Le nom de la colonne servant pour l'entrainement (features)
         - Le nom de la colonne à prédire (target_col)
     """
-    lr = create_model(iter=???, features_cols="???", labelCol=???)
+    lr = create_model(iter=10000, features_cols="features", labelCol=target_col)
 
     """
     Une fois que le modèle est créée, Lancement de l'entrainement.
     Trouvez la fonction qui permet de lancer l'entrainement avec le data_with_feature en paramètre
     """
-    model = lr.???(???)
+    model = lr.fit(data_with_features)
 
     """
     Affichage des coefficients trouvés durant la phase de l'entrainement
@@ -172,7 +172,9 @@ def main():
     """
     Maintenant il faut sauvegarder le modèle
     """
-    save_model(???)
+    save_model(model)
+    validation_data.write.parquet("saved_test_data/validation_data.parquet")
+    test_model(spark, model)
 
 
 if __name__ == '__main__':

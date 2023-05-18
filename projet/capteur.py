@@ -63,9 +63,9 @@ def write_data_minio(df: pd.DataFrame):
     """
     Cette méthode permet d'écrire le DataFrame vers Minio.
     (Obligatoire)
-    ## on va tester si la bucket existe , dans le cas contraire on la crer
-    ## on pousse le dataframe sur minio
-    #decommentez le code du dessous
+    # on va tester si la bucket existe , dans le cas contraire on la crer
+    # on pousse le dataframe sur minio
+    # decommentez le code du dessous
     """
     client = Minio(
         "localhost:9000",
@@ -77,8 +77,8 @@ def write_data_minio(df: pd.DataFrame):
         client.make_bucket("receiver")
 
     timestamp = datetime.datetime.now().strftime('%d-%m-%y')
-    df.to_csv(f"receiver_{timestamp}.csv", encoding='utf-8', index=False)
-    client.fput_object("receiver", f"receiver_{timestamp}.csv", f"receiver_{timestamp}.csv")
+    df.to_json(f"receiver_{timestamp}.json", orient='records')
+    client.fput_object("receiver", f"receiver_{timestamp}.json", f"receiver_{timestamp}.json")
 
 
 if __name__ == "__main__":
